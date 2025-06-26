@@ -1,0 +1,13 @@
+name: Notify the issue creation
+on:
+  issues:
+    types: [opened]
+jobs:
+    open-issue:
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Issue created
+              run: echo "Issue #${{ github.event.issue.number }} created by ${{ github.event.issue.user.login }}: ${{ github.event.issue.title }}"
+              env:
+                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
