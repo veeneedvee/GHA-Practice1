@@ -8,6 +8,5 @@ jobs:
 
         steps:
             - name: Issue created
-              run: echo "Issue #${{ github.event.issue.number }} created by ${{ github.event.issue.user.login }}: ${{ github.event.issue.title }}"
-              env:
-                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              run: |
+                echo "Issue #${{ github.event.issue.number }} created by ${{ github.event.issue.user.login }}: ${{ github.event.issue.title }}"
