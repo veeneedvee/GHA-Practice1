@@ -1,0 +1,28 @@
+graph TD
+    subgraph Browser
+        HTML[index.html]
+        HTML --> MainJSX[main.jsx]
+        MainJSX --> App[App.jsx]
+        App --> Components[src/components/*]
+    end
+
+    subgraph Build Tooling
+        Vite[Vite 3 + HMR]
+        ESLint[ESLint]
+        Vitest[Vitest + jsdom]
+    end
+
+    subgraph CI/CD
+        GHA[GitHub Actions]
+        WF1[workflow1.yml]
+        WF2[workflow2.yml]
+        GHA --> WF1
+        GHA --> WF2
+    end
+
+    Vite -->|bundles| HTML
+    ESLint -->|lints| Components
+    Vitest -->|tests| Components
+    WF1 -->|runs| Vite
+    WF1 -->|runs| Vitest
+    WF1 -->|runs| ESLint
