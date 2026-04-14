@@ -9,15 +9,17 @@ jobs:
     steps:
       - name: Log issue details
         run: |
-          echo "## Issue Event Summary" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Field | Value |" >> "$GITHUB_STEP_SUMMARY"
-          echo "|-------|-------|" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Number | #${{ github.event.issue.number }} |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Title | ${{ github.event.issue.title }} |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Author | @${{ github.event.issue.user.login }} |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Action | ${{ github.event.action }} |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Labels | ${{ join(github.event.issue.labels.*.name, ', ') }} |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| URL | ${{ github.event.issue.html_url }} |" >> "$GITHUB_STEP_SUMMARY"
+          cat >> "$GITHUB_STEP_SUMMARY" <<TABLE
+          ## Issue Event Summary
+          | Field | Value |
+          |-------|-------|
+          | Number | #${{ github.event.issue.number }} |
+          | Title | ${{ github.event.issue.title }} |
+          | Author | @${{ github.event.issue.user.login }} |
+          | Action | ${{ github.event.action }} |
+          | Labels | ${{ join(github.event.issue.labels.*.name, ', ') }} |
+          | URL | ${{ github.event.issue.html_url }} |
+          TABLE
 
   label-check:
     if: github.event.action == 'labeled' && github.event.label.name == 'bug'
