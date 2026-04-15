@@ -1,13 +1,28 @@
+# ---------------------------------------------------------------
+# Issue Tracker workflow
+# Fires on issue events and writes a summary to the Actions UI.
+#
+# Jobs:
+#   log-issue    — writes a markdown table to GITHUB_STEP_SUMMARY
+#   label-check  — emits a ::warning:: when the "bug" label is added
+#
+# To extend: see ai-track-docs/extending-workflow2.md
+# ---------------------------------------------------------------
 name: Issue Tracker
+
+# Trigger on new issues and label changes
 on:
   issues:
     types: [opened, labeled]
 
 jobs:
+  # Job 1 — Log a markdown summary for every issue event
   log-issue:
     runs-on: ubuntu-latest
     steps:
       - name: Log issue details
+        # Uses a heredoc to write a single markdown table to the
+        # Actions Job Summary tab (GITHUB_STEP_SUMMARY)
         run: |
           cat >> "$GITHUB_STEP_SUMMARY" <<TABLE
           ## Issue Event Summary
@@ -21,10 +36,13 @@ jobs:
           | URL | ${{ github.event.issue.html_url }} |
           TABLE
 
+  # Job 2 — React to the "bug" label specifically
   label-check:
+    # Only runs when someone adds the "bug" label
     if: github.event.action == 'labeled' && github.event.label.name == 'bug'
     runs-on: ubuntu-latest
     steps:
       - name: Bug label detected
+        # ::warning:: surfaces as a yellow annotation in the Actions UI
         run: |
           echo "::warning::Bug label added to issue #${{ github.event.issue.number }}: ${{ github.event.issue.title }}"
