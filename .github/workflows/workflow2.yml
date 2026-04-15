@@ -24,8 +24,15 @@ jobs:
   # Job 1 — Log a markdown summary for every issue event
   log-issue:
     runs-on: ubuntu-latest
+    # Resilience: cap job runtime to prevent runaway steps from burning
+    # runner minutes (GitHub default is 360 min / 6 hours).
+    timeout-minutes: 5
     steps:
       - name: Validate issue context
+        id: validate
+        # continue-on-error lets the next step run so it can log the failure
+        # with a structured error message instead of silently aborting the job.
+        continue-on-error: true
         # Guard: fail fast if required event fields are missing or empty
         # SECURITY: use env vars instead of direct ${{ }} interpolation
         # to prevent script injection via user-controlled fields (issue title, labels).
@@ -56,6 +63,8 @@ jobs:
           fi
           echo '{"op":"validate_issue","status":"ok","elapsed_ms":'"$ELAPSED_MS"'}'
       - name: Log issue details
+        # Skip logging if validation failed; emit an error-mapped log instead
+        if: steps.validate.outcome == 'success'
         # Uses a heredoc to write a single markdown table to the
         # Actions Job Summary tab (GITHUB_STEP_SUMMARY)
         # SECURITY: all user-controlled values passed via env vars, not ${{ }}
@@ -81,12 +90,22 @@ jobs:
           TABLE
           ELAPSED_MS=$(( ( $(date +%s%N) - START_NS ) / 1000000 ))
           echo '{"op":"log_issue_summary","status":"ok","issue":'"$ISSUE_NUMBER"',"elapsed_ms":'"$ELAPSED_MS"'}'
+      - name: Handle validation failure
+        # Error mapping: converts a silent job failure into a structured log
+        # so monitoring can detect and alert on validation errors.
+        if: steps.validate.outcome == 'failure'
+        run: |
+          echo '{"op":"log_issue_summary","status":"skipped","reason":"validation_failed","elapsed_ms":0}'
+          echo "::error::Skipped issue summary because validation failed"
+          exit 1
 
   # Job 2 — React to the "bug" label specifically
   label-check:
     # Only runs when someone adds the "bug" label
     if: github.event.action == 'labeled' && github.event.label.name == 'bug'
     runs-on: ubuntu-latest
+    # Resilience: cap runtime (same rationale as log-issue)
+    timeout-minutes: 5
     steps:
       - name: Bug label detected
         # ::warning:: surfaces as a yellow annotation in the Actions UI
