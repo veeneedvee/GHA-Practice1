@@ -41,7 +41,40 @@ Vitest is configured in `vite.config.js`:
 npm run lint
 ```
 
-Runs ESLint on `src/**/*.jsx` with auto-fix enabled.
+Runs ESLint on `src/**/*.{jsx,js}` with auto-fix enabled.
+
+### Active rules
+
+The config extends `eslint:recommended` plus React plugin defaults. Key rules
+added beyond the baseline:
+
+| Rule | Level | Why |
+|------|-------|-----|
+| `eqeqeq` | error | Prevents accidental type coercion (`==` → `===`) |
+| `no-var` | error | Enforces `let`/`const` over `var` (block scoping) |
+| `prefer-const` | warn | Flags `let` that is never reassigned |
+| `no-debugger` | error | Catches leftover breakpoints |
+| `semi` | error | Enforces semicolons (house style) |
+| `eslint:recommended` | — | Enables ~50 core rules: `no-undef`, `no-unused-vars`, `no-dupe-keys`, etc. |
+
+### Test file overrides
+
+Files matching `src/test/**` or `src/**/*.test.*` get:
+- Vitest globals (`describe`, `it`, `expect`, etc.) declared as `readonly`
+- `no-console` off (benchmarks print timing stats)
+
+### Running lint locally
+
+```bash
+# With auto-fix (default npm script):
+npm run lint
+
+# Without auto-fix (audit only):
+npx eslint --ext .jsx,.js src --no-fix
+
+# Single file:
+npx eslint src/App.jsx
+```
 
 ## Dev Server
 
