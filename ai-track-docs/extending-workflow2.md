@@ -168,6 +168,52 @@ GitHub Actions supports these annotations in `echo`:
 
 Use them in any step's `run:` block.
 
+## Resilience patterns
+
+### Job timeouts
+
+Every job sets `timeout-minutes: 5` to prevent runaway steps from consuming runner
+minutes. GitHub's default is 360 minutes (6 hours).
+
+```yaml
+jobs:
+  my-job:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5      # ← add to every job
+```
+
+When adding a new job, always include `timeout-minutes`. Choose a value that's
+2–3× the expected runtime.
+
+### Error mapping with continue-on-error
+
+The `log-issue` job uses a three-step pattern so validation failures produce a
+structured error log instead of silently aborting:
+
+```yaml
+steps:
+  - name: Validate
+    id: validate
+    continue-on-error: true     # let next steps run on failure
+    run: |
+      # ... validation logic ...
+      exit 1  # on failure
+
+  - name: Do work
+    if: steps.validate.outcome == 'success'    # happy path
+    run: echo '{"op":"work","status":"ok"}'
+
+  - name: Handle failure
+    if: steps.validate.outcome == 'failure'    # error-mapped path
+    run: |
+      echo '{"op":"work","status":"skipped","reason":"validation_failed"}'
+      exit 1
+```
+
+**Why this matters:** Without `continue-on-error`, a failed validation step kills the
+job immediately. Downstream steps never run, so no structured log is emitted. Monitoring
+tools see a generic "job failed" instead of a specific `"reason":"validation_failed"`.
+
 ## Test checklist after changes
 
 1. Run `npm run test` — all structural tests must pass

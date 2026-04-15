@@ -149,4 +149,24 @@ describe('workflow2.yml — Issue Tracker', () => {
     expect(content).toMatch(/if:\s*env\.ENABLE_LABEL_CHECK\s*!=\s*'true'/);
     expect(content).toMatch(/Label check is disabled/);
   });
+
+  // ── Resilience tests ───────────────────────────────────────
+
+  // Both jobs must have a timeout to prevent runaway steps
+  it('sets timeout-minutes on all jobs', () => {
+    const timeouts = content.match(/timeout-minutes:\s*\d+/g);
+    expect(timeouts).not.toBeNull();
+    expect(timeouts.length).toBe(2); // log-issue + label-check
+  });
+
+  // Validation failure must be handled gracefully with error mapping
+  it('handles validation failure with continue-on-error and error mapping', () => {
+    // Validation step uses continue-on-error so the next step can log
+    expect(content).toMatch(/continue-on-error:\s*true/);
+    // A dedicated failure-handler step emits a structured error log
+    expect(content).toMatch(/Handle validation failure/);
+    expect(content).toMatch(/steps\.validate\.outcome\s*==\s*'failure'/);
+    expect(content).toMatch(/"status"\s*:\s*"skipped"/);
+    expect(content).toMatch(/"reason"\s*:\s*"validation_failed"/);
+  });
 });
