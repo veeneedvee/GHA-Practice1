@@ -63,13 +63,63 @@ it('defines the help-wanted job', () => {
 
 ## How to add a column to the summary table
 
-Add one line inside the heredoc in the `log-issue` job:
+Add one line inside the heredoc in the `log-issue` job. Use an env var, not direct
+`${{ }}` interpolation (see Security section below):
 
 ```yaml
-          | Assignee | @${{ github.event.issue.assignee.login || 'unassigned' }} |
+        env:
+          ISSUE_ASSIGNEE: ${{ github.event.issue.assignee.login || 'unassigned' }}
+        run: |
+          ...
+          | Assignee | @${ISSUE_ASSIGNEE} |
 ```
 
 No test change needed — existing tests check for `GITHUB_STEP_SUMMARY`, not individual columns.
+
+## Security: preventing script injection
+
+**Rule:** Never use `${{ github.event.issue.title }}` or any user-controlled expression
+directly inside a `run:` block. An attacker can craft a malicious issue title to execute
+arbitrary commands.
+
+**Safe pattern — use `env:` as a mediator:**
+
+```yaml
+      - name: Safe step
+        env:
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+        run: |
+          echo "Title: ${ISSUE_TITLE}"
+```
+
+**Unsafe pattern — direct interpolation:**
+
+```yaml
+      # VULNERABLE — do not do this
+      - name: Unsafe step
+        run: |
+          echo "Title: ${{ github.event.issue.title }}"
+```
+
+**Why it matters:** GitHub expands `${{ }}` expressions *before* the shell runs, so the
+value is injected directly into the script text. If the title contains `"; rm -rf /; echo "`,
+the shell executes it. Environment variables are passed as data, not code.
+
+**Reference:**
+[GitHub docs — Security hardening for GitHub Actions](https://docs.github.com/en/actions/security-for-github-actions/security-guides/security-hardening-for-github-actions#using-an-intermediate-environment-variable)
+
+### User-controlled fields to always pass via env
+
+| Field | Why it's dangerous |
+|-------|--------------------|
+| `github.event.issue.title` | Set by any user who opens an issue |
+| `github.event.issue.body` | Set by any user |
+| `github.event.comment.body` | Set by any commenter |
+| `github.event.pull_request.title` | Set by PR author |
+| `github.event.pull_request.head.ref` | Branch name — set by forker |
+
+Safe fields (not user-controlled): `github.event.issue.number`,
+`github.event.action`, `github.event.issue.html_url`.
 
 ## How to add a new workflow command
 

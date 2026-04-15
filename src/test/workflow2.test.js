@@ -60,11 +60,11 @@ describe('workflow2.yml — Issue Tracker', () => {
 
   // Input validation: the workflow must guard against missing event fields
   it('validates required issue fields before writing summary', () => {
-    // Must check issue.number, issue.title, and issue.user.login
+    // Must check issue.number, issue.title, and issue.user.login via env vars
     expect(content).toMatch(/Validate issue context/);
-    expect(content).toMatch(/-z.*github\.event\.issue\.number/);
-    expect(content).toMatch(/-z.*github\.event\.issue\.title/);
-    expect(content).toMatch(/-z.*github\.event\.issue\.user\.login/);
+    expect(content).toMatch(/-z "\$ISSUE_NUMBER"/);
+    expect(content).toMatch(/-z "\$ISSUE_TITLE"/);
+    expect(content).toMatch(/-z "\$ISSUE_AUTHOR"/);
   });
 
   // Validation must exit non-zero on missing fields (fail-fast)
@@ -83,5 +83,26 @@ describe('workflow2.yml — Issue Tracker', () => {
   // Negative: must NOT use self-hosted runners (security/cost boundary)
   it('does not use self-hosted runners', () => {
     expect(content).not.toMatch(/runs-on:\s*self-hosted/);
+  });
+
+  // ── Security tests ─────────────────────────────────────────
+
+  // User-controlled values must be passed via env vars, not direct ${{ }} in run:
+  it('uses env vars for user-controlled input (prevents script injection)', () => {
+    // Extract only the shell script lines (after "run: |") by matching indented lines
+    // that follow a run: | declaration. The env: blocks will contain ${{ }} — that's expected.
+    // What must NOT happen: ${{ github.event.issue.title }} directly inside shell commands.
+    const shellLines = content.split('\n')
+      .filter(line => /^\s+(echo|cat|if|fi|exit)/.test(line))
+      .join('\n');
+    expect(shellLines).not.toMatch(/\$\{\{\s*github\.event\.issue\.title\s*\}\}/);
+    expect(shellLines).not.toMatch(/\$\{\{\s*github\.event\.issue\.body\s*\}\}/);
+  });
+
+  // Env blocks must exist to mediate user-controlled values
+  it('defines env blocks for steps that use issue data', () => {
+    expect(content).toMatch(/ISSUE_NUMBER:\s*\$\{\{/);
+    expect(content).toMatch(/ISSUE_TITLE:\s*\$\{\{/);
+    expect(content).toMatch(/ISSUE_AUTHOR:\s*\$\{\{/);
   });
 });

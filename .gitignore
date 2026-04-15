@@ -22,3 +22,35 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# ── Secrets & credentials ──────────────────────────────
+# Environment files (may contain API keys, tokens, passwords)
+.env
+.env.*
+!.env.example
+
+# Private keys and certificates
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+
+# Auth tokens and credential files
+*.secret
+*.credentials
+.npmrc
+.netrc
+.htpasswd
+
+# Cloud provider credential files
+.aws/
+.azure/
+.gcloud/
+
+# Docker secrets
+docker-compose.override.yml
+
+# OS credential stores
+*.kdbx
