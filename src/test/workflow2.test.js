@@ -55,4 +55,33 @@ describe('workflow2.yml — Issue Tracker', () => {
     expect(matches).not.toBeNull();
     expect(matches.length).toBe(2);
   });
+
+  // ── Negative tests ──────────────────────────────────────────
+
+  // Input validation: the workflow must guard against missing event fields
+  it('validates required issue fields before writing summary', () => {
+    // Must check issue.number, issue.title, and issue.user.login
+    expect(content).toMatch(/Validate issue context/);
+    expect(content).toMatch(/-z.*github\.event\.issue\.number/);
+    expect(content).toMatch(/-z.*github\.event\.issue\.title/);
+    expect(content).toMatch(/-z.*github\.event\.issue\.user\.login/);
+  });
+
+  // Validation must exit non-zero on missing fields (fail-fast)
+  it('exits with error if validation fails', () => {
+    expect(content).toMatch(/::error::Missing issue/);
+    expect(content).toMatch(/exit 1/);
+  });
+
+  // Negative: must NOT trigger on unrelated events
+  it('does not trigger on pull_request or push events', () => {
+    expect(content).not.toMatch(/pull_request:/);
+    expect(content).not.toMatch(/\bon:\s*push/);
+    expect(content).not.toMatch(/on:\s*\[push/);
+  });
+
+  // Negative: must NOT use self-hosted runners (security/cost boundary)
+  it('does not use self-hosted runners', () => {
+    expect(content).not.toMatch(/runs-on:\s*self-hosted/);
+  });
 });

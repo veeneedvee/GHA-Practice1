@@ -20,6 +20,21 @@ jobs:
   log-issue:
     runs-on: ubuntu-latest
     steps:
+      - name: Validate issue context
+        # Guard: fail fast if required event fields are missing or empty
+        run: |
+          if [ -z "${{ github.event.issue.number }}" ]; then
+            echo "::error::Missing issue number in event payload"
+            exit 1
+          fi
+          if [ -z "${{ github.event.issue.title }}" ]; then
+            echo "::error::Missing issue title in event payload"
+            exit 1
+          fi
+          if [ -z "${{ github.event.issue.user.login }}" ]; then
+            echo "::error::Missing issue author in event payload"
+            exit 1
+          fi
       - name: Log issue details
         # Uses a heredoc to write a single markdown table to the
         # Actions Job Summary tab (GITHUB_STEP_SUMMARY)
