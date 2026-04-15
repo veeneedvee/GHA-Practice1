@@ -105,4 +105,26 @@ describe('workflow2.yml — Issue Tracker', () => {
     expect(content).toMatch(/ISSUE_TITLE:\s*\$\{\{/);
     expect(content).toMatch(/ISSUE_AUTHOR:\s*\$\{\{/);
   });
+
+  // ── Structured logging tests ────────────────────────────────
+
+  // Structured logs must use consistent JSON fields: op, status, elapsed_ms
+  it('emits structured JSON logs with op, status, and elapsed_ms', () => {
+    // Validate step emits a log line with all three required fields
+    expect(content).toMatch(/"op"\s*:\s*"validate_issue"/);
+    expect(content).toMatch(/"status"\s*:\s*"ok"/);
+    expect(content).toMatch(/"elapsed_ms"/);
+  });
+
+  // The log-issue summary step must also emit a structured log
+  it('emits a structured log for the log_issue_summary operation', () => {
+    expect(content).toMatch(/"op"\s*:\s*"log_issue_summary"/);
+  });
+
+  // Elapsed time must be computed (START_NS pattern)
+  it('measures elapsed time using date +%s%N', () => {
+    const timerStarts = content.match(/START_NS=\$\(date \+%s%N\)/g);
+    expect(timerStarts).not.toBeNull();
+    expect(timerStarts.length).toBeGreaterThanOrEqual(2);
+  });
 });

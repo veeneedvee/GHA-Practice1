@@ -30,18 +30,26 @@ jobs:
           ISSUE_TITLE: ${{ github.event.issue.title }}
           ISSUE_AUTHOR: ${{ github.event.issue.user.login }}
         run: |
+          START_NS=$(date +%s%N)
+          VALID=true
           if [ -z "$ISSUE_NUMBER" ]; then
             echo "::error::Missing issue number in event payload"
-            exit 1
+            VALID=false
           fi
           if [ -z "$ISSUE_TITLE" ]; then
             echo "::error::Missing issue title in event payload"
-            exit 1
+            VALID=false
           fi
           if [ -z "$ISSUE_AUTHOR" ]; then
             echo "::error::Missing issue author in event payload"
+            VALID=false
+          fi
+          ELAPSED_MS=$(( ( $(date +%s%N) - START_NS ) / 1000000 ))
+          if [ "$VALID" = "false" ]; then
+            echo '{"op":"validate_issue","status":"fail","elapsed_ms":'"$ELAPSED_MS"'}'
             exit 1
           fi
+          echo '{"op":"validate_issue","status":"ok","elapsed_ms":'"$ELAPSED_MS"'}'
       - name: Log issue details
         # Uses a heredoc to write a single markdown table to the
         # Actions Job Summary tab (GITHUB_STEP_SUMMARY)
@@ -54,6 +62,7 @@ jobs:
           ISSUE_LABELS: ${{ join(github.event.issue.labels.*.name, ', ') }}
           ISSUE_URL: ${{ github.event.issue.html_url }}
         run: |
+          START_NS=$(date +%s%N)
           cat >> "$GITHUB_STEP_SUMMARY" <<TABLE
           ## Issue Event Summary
           | Field | Value |
@@ -65,6 +74,8 @@ jobs:
           | Labels | ${ISSUE_LABELS} |
           | URL | ${ISSUE_URL} |
           TABLE
+          ELAPSED_MS=$(( ( $(date +%s%N) - START_NS ) / 1000000 ))
+          echo '{"op":"log_issue_summary","status":"ok","issue":'"$ISSUE_NUMBER"',"elapsed_ms":'"$ELAPSED_MS"'}'
 
   # Job 2 — React to the "bug" label specifically
   label-check:
