@@ -62,6 +62,19 @@ GitHub Actions workflows are in `.github/workflows/`:
 
 Workflows trigger on push and pull request events. See each YAML file for details.
 
+### Local CI script
+
+When GitHub Actions isn't available (offline, no push access), use the local test
+script to run the same checks a CI pipeline would:
+
+```bash
+bash scripts/run-tests.sh            # full pipeline: install → lint → test → build
+bash scripts/run-tests.sh --skip-install   # skip npm install (already installed)
+```
+
+The script runs steps sequentially and exits on first failure. Exit code 0 means
+all checks passed.
+
 ---
 
 ## Dependency Notes
