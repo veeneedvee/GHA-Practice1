@@ -118,6 +118,41 @@ the shell executes it. Environment variables are passed as data, not code.
 | `github.event.pull_request.title` | Set by PR author |
 | `github.event.pull_request.head.ref` | Branch name — set by forker |
 
+## Feature toggles
+
+Workflow-level `env:` variables act as safe feature toggles. They let you disable
+non-critical behavior without removing code or changing job logic.
+
+### Current toggles
+
+| Variable | Default | Controls | Safe to disable? |
+|----------|---------|----------|-----------------|
+| `ENABLE_LABEL_CHECK` | `'true'` | Bug-label `::warning::` annotation | Yes — informational only |
+
+### How toggles work
+
+```yaml
+env:
+  ENABLE_LABEL_CHECK: 'true'   # ← flip to 'false' to disable
+
+jobs:
+  label-check:
+    steps:
+      - name: Bug label detected
+        if: env.ENABLE_LABEL_CHECK == 'true'    # ON path
+        run: echo "::warning::..."
+      - name: Label check skipped
+        if: env.ENABLE_LABEL_CHECK != 'true'    # OFF path
+        run: echo "Label check is disabled..."
+```
+
+### Adding a new toggle
+
+1. Add the variable to the workflow-level `env:` block with a safe default (`'true'`)
+2. Gate the controlled step with `if: env.MY_TOGGLE == 'true'`
+3. Add an OFF-path step so the job logs why it was skipped
+4. Add two tests: one asserting the ON condition, one asserting the OFF path exists
+
 Safe fields (not user-controlled): `github.event.issue.number`,
 `github.event.action`, `github.event.issue.html_url`.
 

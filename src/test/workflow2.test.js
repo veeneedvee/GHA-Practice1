@@ -127,4 +127,26 @@ describe('workflow2.yml — Issue Tracker', () => {
     expect(timerStarts).not.toBeNull();
     expect(timerStarts.length).toBeGreaterThanOrEqual(2);
   });
+
+  // ── Feature toggle tests ───────────────────────────────────
+
+  // Toggle must be declared at workflow level with a safe default
+  it('declares ENABLE_LABEL_CHECK toggle defaulting to true', () => {
+    // Workflow-level env block must define the toggle
+    expect(content).toMatch(/^env:\s*$/m);
+    expect(content).toMatch(/ENABLE_LABEL_CHECK:\s*'true'/);
+  });
+
+  // ON mode: warning step is gated by the toggle
+  it('gates the bug-label warning step on ENABLE_LABEL_CHECK (ON mode)', () => {
+    expect(content).toMatch(/if:\s*env\.ENABLE_LABEL_CHECK\s*==\s*'true'/);
+    // The warning annotation must be inside the toggled step
+    expect(content).toMatch(/::warning::Bug label added/);
+  });
+
+  // OFF mode: a skip step runs when the toggle is disabled
+  it('has a skip step when ENABLE_LABEL_CHECK is off (OFF mode)', () => {
+    expect(content).toMatch(/if:\s*env\.ENABLE_LABEL_CHECK\s*!=\s*'true'/);
+    expect(content).toMatch(/Label check is disabled/);
+  });
 });
