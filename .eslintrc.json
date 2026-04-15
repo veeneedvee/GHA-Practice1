@@ -11,11 +11,32 @@
     "ecmaVersion": "latest",
     "sourceType": "module"
   },
-  "extends": ["plugin:react/recommended", "plugin:react/jsx-runtime"],
+  "extends": ["eslint:recommended", "plugin:react/recommended", "plugin:react/jsx-runtime"],
   "rules": {
     "react/react-in-jsx-scope": "off",
-    "semi": [2, "always"]
+    "semi": [2, "always"],
+    "eqeqeq": "error",
+    "no-var": "error",
+    "prefer-const": "warn",
+    "no-debugger": "error"
   },
+  "overrides": [
+    {
+      "files": ["src/test/**", "src/**/*.test.*"],
+      "globals": {
+        "describe": "readonly",
+        "it": "readonly",
+        "expect": "readonly",
+        "beforeEach": "readonly",
+        "afterEach": "readonly",
+        "beforeAll": "readonly",
+        "afterAll": "readonly"
+      },
+      "rules": {
+        "no-console": "off"
+      }
+    }
+  ],
   "settings": {
     "react": {
       "version": "detect"
