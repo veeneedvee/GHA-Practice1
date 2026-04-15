@@ -15,6 +15,11 @@ on:
   issues:
     types: [opened, labeled]
 
+# ── Feature toggles ───────────────────────────────────────────
+# Set to 'false' to suppress bug-label warnings without removing the job.
+env:
+  ENABLE_LABEL_CHECK: 'true'
+
 jobs:
   # Job 1 — Log a markdown summary for every issue event
   log-issue:
@@ -85,9 +90,15 @@ jobs:
     steps:
       - name: Bug label detected
         # ::warning:: surfaces as a yellow annotation in the Actions UI
+        # Gated by ENABLE_LABEL_CHECK toggle (workflow-level env)
         # SECURITY: env vars prevent script injection from issue title
+        if: env.ENABLE_LABEL_CHECK == 'true'
         env:
           ISSUE_NUMBER: ${{ github.event.issue.number }}
           ISSUE_TITLE: ${{ github.event.issue.title }}
         run: |
           echo "::warning::Bug label added to issue #${ISSUE_NUMBER}: ${ISSUE_TITLE}"
+      - name: Label check skipped
+        if: env.ENABLE_LABEL_CHECK != 'true'
+        run: |
+          echo "Label check is disabled (ENABLE_LABEL_CHECK != true). Skipping."
